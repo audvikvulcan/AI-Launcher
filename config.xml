@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.alien.spacelauncher" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Alien Space AI Launcher</name>
+    <description>3D Realistic Space &amp; Alien Face AI Android Launcher linked with Gemini, Follow AI &amp; YT Create</description>
+    <author email="commander@alienlauncher.ai">Ayush Vulcan AI</author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <preference name="Fullscreen" value="true" />
+    <preference name="Orientation" value="portrait" />
+    <preference name="BackgroundColor" value="0xff010308" />
+</widget>

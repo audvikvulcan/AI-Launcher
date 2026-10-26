@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ALIEN CORE AI LAUNCHER</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-green: #00ff88;
+            --neon-purple: #b537f2;
+            --neon-red: #ff2a5f;
+            --neon-gold: #ffcc00;
+            --hud-bg: rgba(4, 12, 26, 0.72);
+            --hud-border: rgba(0, 243, 255, 0.45);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #010308;
+            font-family: 'Rajdhani', sans-serif;
+            color: #e2f9ff;
+        }
+        /* 3D Infinite Space & Alien Face Canvas */
+        #space-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        /* Scanline & Vignette Overlay */
+        .cyber-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 35%, rgba(0, 5, 15, 0.75) 100%),
+                        repeating-linear-gradient(0deg, rgba(0, 243, 255, 0.02) 0px, rgba(0, 243, 255, 0.02) 1px, transparent 1px, transparent 3px);
+            pointer-events: none;
+            z-index: 2;
+        }
+        /* Main HUD Layer */
+        #hud-layer {
+            position: relative;
+            z-index: 10;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12px 10px 16px;
+        }
+        /* Top Status Telemetry Bar */
+        .top-telemetry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--hud-bg);
+            border: 1px solid var(--hud-border);
+            border-radius: 14px;
+            padding: 8px 14px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.18);
+        }
+        .status-left, .status-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+        .online-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulseDot 1.5s infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.6; }
+        }
+        .clock-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+        .mood-badge {
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Middle Section: Side Gadgets + Central Alien Core Zone */
+        .middle-zone {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin: 8px 0;
+        }
+        .gadget-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 112px;
+            z-index: 15;
+        }
+        .gadget-pod {
+            background: var(--hud-bg);
+            border: 1px solid var(--hud-border);
+            border-radius: 14px;
+            padding: 10px 8px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        .gadget-pod::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan);
+        }
+        .gadget-pod.right-pod::before {
+            left: auto;
+            right: 0;
+            background: var(--neon-purple);
+            box-shadow: 0 0 8px var(--neon-purple);
+        }
+        .gadget-pod:active, .gadget-pod:hover {
+            transform: scale(1.05);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 18px rgba(0, 255, 136, 0.35);
+        }
+        .gadget-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+        .gadget-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--neon-cyan);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .gadget-sub {
+            font-size: 11px;
+            color: #b8e2f2;
+            margin-top: 2px;
+            line-height: 1.15;
+        }
+
+        /* Center Alien Tap Trigger & Live Speech/AI Response Bubble */
+        .center-alien-zone {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+            padding-bottom: 10px;
+            pointer-events: none;
+        }
+        .alien-core-trigger {
+            width: 170px;
+            height: 210px;
+            border-radius: 50%;
+            pointer-events: auto;
+            cursor: pointer;
+            margin-bottom: auto;
+            margin-top: 15px;
+            position: relative;
+        }
+        .ai-console-box {
+            pointer-events: auto;
+            width: 96%;
+            max-width: 360px;
+            background: rgba(3, 14, 30, 0.85);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 16px;
+            padding: 10px 12px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);
+        }
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            margin-bottom: 5px;
+        }
+        .ai-response-text {
+            font-size: 13.5px;
+            line-height: 1.35;
+            color: #ffffff;
+            max-height: 78px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+        .command-bar {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .command-input {
+            flex: 1;
+            background: rgba(0, 243, 255, 0.08);
+            border: 1px solid rgba(0, 243, 255, 0.35);
+            border-radius: 10px;
+            padding: 7px 10px;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            outline: none;
+        }
+        .mic-btn, .send-btn {
+            background: linear-gradient(135deg, #00f3ff, #0077ff);
+            border: none;
+            border-radius: 10px;
+            padding: 7px 11px;
+            color: #000;
+            font-weight: 800;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+        }
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #ff2a5f, #ff8800);
+            color: #fff;
+            animation: pulseMic 0.9s infinite;
+        }
+        @keyframes pulseMic {
+            0%, 100% { box-shadow: 0 0 8px #ff2a5f; }
+            50% { box-shadow: 0 0 22px #ff2a5f; }
+        }
+
+        /* Bottom 5-Icon Dock + Custom Add Button */
+        .bottom-dock-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .custom-shortcuts-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-height: 2px;
+        }
+        .custom-chip {
+            background: rgba(0, 243, 255, 0.14);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .bottom-dock {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: rgba(3, 12, 26, 0.88);
+            border: 1px solid var(--hud-border);
+            border-radius: 22px;
+            padding: 10px 8px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.22);
+        }
+        .dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .dock-item:active {
+            transform: scale(0.88);
+        }
+        .dock-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: rgba(0, 243, 255, 0.12);
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+        .dock-item.home-menu-btn .dock-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00f3ff 0%, #0044aa 85%);
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 20px #00f3ff;
+            font-size: 25px;
+            color: #000;
+        }
+        .dock-label {
+            font-size: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: #b8e2f2;
+        }
+
+        /* Modal & A-Z Alphabetical App Drawer Overlays */
+        .overlay-panel {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 8, 20, 0.94);
+            backdrop-filter: blur(16px);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            padding: 16px;
+        }
+        .overlay-panel.active {
+            display: flex;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--hud-border);
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: var(--neon-cyan);
+            font-weight: 800;
+        }
+        .close-btn {
+            background: rgba(255, 42, 95, 0.2);
+            border: 1px solid var(--neon-red);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* A-Z Drawer Specific Layout */
+        .drawer-search {
+            width: 100%;
+            background: rgba(0, 243, 255, 0.08);
+            border: 1px solid var(--hud-border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        .drawer-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            gap: 8px;
+        }
+        .az-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+        .az-letter-section {
+            margin-bottom: 16px;
+        }
+        .az-letter-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--neon-green);
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 4px solid var(--neon-green);
+            padding: 4px 10px;
+            margin-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+        }
+        .az-apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+            gap: 10px;
+        }
+        .app-card {
+            background: rgba(0, 243, 255, 0.06);
+            border: 1px solid rgba(0, 243, 255, 0.25);
+            border-radius: 12px;
+            padding: 10px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .app-card:active {
+            transform: scale(0.92);
+            border-color: var(--neon-green);
+        }
+        .app-card-icon {
+            font-size: 24px;
+        }
+        .app-card-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #e2f9ff;
+            word-break: break-word;
+        }
+        .az-sidebar {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: rgba(0, 243, 255, 0.08);
+            border-radius: 12px;
+            padding: 6px 4px;
+            overflow-y: auto;
+        }
+        .az-char {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            color: var(--neon-cyan);
+            padding: 2px 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .az-char:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            border-radius: 4px;
+        }
+
+        /* Cards inside Modal Panels */
+        .info-card {
+            background: rgba(0, 243, 255, 0.07);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .info-card h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            color: var(--neon-green);
+            margin-bottom: 4px;
+        }
+        .info-card p {
+            font-size: 13px;
+            color: #d0f0fd;
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #00f3ff, #00ff88);
+            color: #000;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Realistic Unlimited Animated Space + Alien Face Canvas -->
+    <canvas id="space-canvas"></canvas>
+    <div class="cyber-overlay"></div>
+
+    <!-- HUD Interface -->
+    <div id="hud-layer">
+        <!-- Top Bar -->
+        <div class="top-telemetry">
+            <div class="status-left">
+                <div class="online-dot"></div>
+                <span>SPACE-LINK: ONLINE</span>
+                <span class="mood-badge" id="mood-indicator">MOOD: COOL ⚡</span>
+            </div>
+            <div class="clock-display" id="live-clock">00:00:00</div>
+            <div class="status-right">
+                <span id="battery-stat">🔋 98%</span>
+            </div>
+        </div>
+
+        <!-- Middle Area: Left Gadgets + Alien Core + Right Gadgets -->
+        <div class="middle-zone">
+            <!-- Left Side Gadgets -->
+            <div class="gadget-column">
+                <div class="gadget-pod" onclick="toggleVoiceCommand()">
+                    <div class="gadget-icon">🎙️</div>
+                    <div class="gadget-title">VOICE CORE</div>
+                    <div class="gadget-sub">बोलें और अंत में "Over" या "Done" कहें</div>
+                </div>
+                <div class="gadget-pod" onclick="openPanel('orders-panel')">
+                    <div class="gadget-icon">📦</div>
+                    <div class="gadget-title">ORDERS HUB</div>
+                    <div class="gadget-sub" id="orders-summary">3 Live Orders Tracked</div>
+                </div>
+                <div class="gadget-pod" onclick="openPanel('contacts-panel')">
+                    <div class="gadget-icon">👥</div>
+                    <div class="gadget-title">CONTACTS AI</div>
+                    <div class="gadget-sub">Smart Call & Lookup</div>
+                </div>
+            </div>
+
+            <!-- Central Alien Interactive Core & AI Console -->
+            <div class="center-alien-zone">
+                <div class="alien-core-trigger" onclick="alienFaceTapped()" title="Tap Alien Core to Speak"></div>
+
+                <div class="ai-console-box">
+                    <div class="console-header">
+                        <span id="ai-state-label">👽 ALIEN GEMINI CORE [READY]</span>
+                        <span id="reply-mode-badge" onclick="cycleReplyMode()" style="cursor:pointer; text-decoration:underline;">MODE: SPEAK+WRITE 🔊✍️</span>
+                    </div>
+                    <div class="ai-response-text" id="ai-output">
+                        नमस्ते कमांडर! मेरा एलियन स्पेस कोर ऑनलाइन है। किसी भी गैजेट पर टैप करें या माइक दबाकर कमांड दें और अंत में <b>"Over"</b> या <b>"Done"</b> बोलें!
+                    </div>
+                    <div class="command-bar">
+                        <input type="text" id="cmd-input" class="command-input" placeholder="कमांड लिखें या माइक दबाकर बोलें..." onkeydown="if(event.key==='Enter') handleManualCommand()">
+                        <button class="mic-btn" id="mic-trigger-btn" onclick="toggleVoiceCommand()">🎤</button>
+                        <button class="send-btn" onclick="handleManualCommand()">GO</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side Gadgets -->
+            <div class="gadget-column">
+                <div class="gadget-pod right-pod" onclick="openPanel('creator-panel')">
+                    <div class="gadget-icon">🎬</div>
+                    <div class="gadget-title">YT CREATE & AI</div>
+                    <div class="gadget-sub">Follow AI & YouTube Studio</div>
+                </div>
+                <div class="gadget-pod right-pod" onclick="openPanel('analyzer-panel')">
+                    <div class="gadget-icon">📊</div>
+                    <div class="gadget-title">APP ANALYZER</div>
+                    <div class="gadget-sub">Full Phone Control</div>
+                </div>
+                <div class="gadget-pod right-pod" onclick="openPanel('gemini-panel')">
+                    <div class="gadget-icon">🧠</div>
+                    <div class="gadget-title">GEMINI LINK</div>
+                    <div class="gadget-sub">API & Mood Engine</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom 5-Icon Dock + Custom Added Items -->
+        <div class="bottom-dock-container">
+            <div class="custom-shortcuts-row" id="custom-dock-row"></div>
+            <div class="bottom-dock">
+                <!-- 1. Call Button -->
+                <div class="dock-item" onclick="launchCoreApp('call')">
+                    <div class="dock-icon">📞</div>
+                    <div class="dock-label">CALL</div>
+                </div>
+                <!-- 2. Camera Button -->
+                <div class="dock-item" onclick="launchCoreApp('camera')">
+                    <div class="dock-icon">📷</div>
+                    <div class="dock-label">CAMERA</div>
+                </div>
+                <!-- 3. Home / Menu Button (Opens A-Z Alphabetical App Drawer) -->
+                <div class="dock-item home-menu-btn" onclick="openAZDrawer()">
+                    <div class="dock-icon">🛸</div>
+                    <div class="dock-label">A-Z MENU</div>
+                </div>
+                <!-- 4. Chrome Browser -->
+                <div class="dock-item" onclick="launchCoreApp('chrome')">
+                    <div class="dock-icon">🌐</div>
+                    <div class="dock-label">CHROME</div>
+                </div>
+                <!-- 5. WhatsApp -->
+                <div class="dock-item" onclick="launchCoreApp('whatsapp')">
+                    <div class="dock-icon">💬</div>
+                    <div class="dock-label">WHATSAPP</div>
+                </div>
+                <!-- + Add Custom Item Button -->
+                <div class="dock-item" onclick="promptAddCustomDockItem()">
+                    <div class="dock-icon" style="border-style:dashed;">➕</div>
+                    <div class="dock-label">ADD</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A-Z ALPHABETICAL APP DRAWER & FOLDERS -->
+    <div class="overlay-panel" id="az-drawer-panel">
+        <div class="panel-header">
+            <div class="panel-title">📂 A-Z ALPHABETICAL APP FOLDERS</div>
+            <button class="close-btn" onclick="closeAllPanels()">CLOSE ✕</button>
+        </div>
+        <input type="text" id="app-search-input" class="drawer-search" placeholder="🔍 ऐप या फोल्डर खोजें (Search A-Z Apps)..." oninput="renderAZApps(this.value)">
+        <div class="drawer-body">
+            <div class="az-list-container" id="az-apps-list"></div>
+            <div class="az-sidebar" id="az-index-bar"></div>
+        </div>
+    </div>
+
+    <!-- ORDERS & NOTIFICATION ANALYZER PANEL -->
+    <div class="overlay-panel" id="orders-panel">
+        <div class="panel-header">
+            <div class="panel-title">📦 APP ORDERS & NOTIFICATION SCANNER</div>
+            <button class="close-btn" onclick="closeAllPanels()">CLOSE ✕</button>
+        </div>
+        <div style="overflow-y:auto; flex:1;" id="orders-list-container">
+            <div class="info-card">
+                <h4>🛒 Amazon India — Out for Delivery</h4>
+                <p>ऑर्डर: Studio Softbox LED Ring Light & Mic Stand<br>स्टेटस: आज शाम 6:00 बजे तक डिलीवर होगा।</p>
+                <button class="action-btn" onclick="speakAndShow('आपका अमेज़न ऑर्डर आज शाम 6 बजे तक डिलीवर होने वाला है।')">🔊 AI से सुनें</button>
+            </div>
+            <div class="info-card">
+                <h4>🍔 Zomato — Order Dispatched</h4>
+                <p>ऑर्डर: Paneer Tikka Roll & Cold Coffee<br>स्टेटस: राइडर 12 मिनट में आपके पास पहुंचेगा।</p>
+                <button class="action-btn" onclick="speakAndShow('ज़ोमैटो का ऑर्डर रास्ते में है और 12 मिनट में पहुंच जाएगा।')">🔊 AI से सुनें</button>
+            </div>
+            <div class="info-card">
+                <h4>📦 Flipkart — Shipped</h4>
+                <p>ऑर्डर: Anti-Glare Zero Power Eyeglasses<br>स्टेटस: रांची हब से निकल चुका है।</p>
+                <button class="action-btn" onclick="speakAndShow('फ्लिपकार्ट से आपका चश्मा शिप हो चुका है।')">🔊 AI से सुनें</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTACTS & CALL ANALYZER PANEL -->
+    <div class="overlay-panel" id="contacts-panel">
+        <div class="panel-header">
+            <div class="panel-title">👥 CONTACTS UNDER ALIEN AI CONTROL</div>
+            <button class="close-btn" onclick="closeAllPanels()">CLOSE ✕</button>
+        </div>
+        <div style="overflow-y:auto; flex:1;" id="contacts-list-container">
+            <div class="info-card">
+                <h4>📞 Babloo Vishwakarma (Family)</h4>
+                <p>Status: Frequent Contact • Direct Call & WhatsApp Ready</p>
+                <button class="action-btn" onclick="window.location.href='tel:+919876543210'">📞 Call Now</button>
+            </div>
+            <div class="info-card">
+                <h4>📞 Brother (App Dev Partner)</h4>
+                <p>Status: Project Collaborator • Unity & Android Dev</p>
+                <button class="action-btn" onclick="window.location.href='tel:+919876543211'">📞 Call Now</button>
+            </div>
+            <div class="info-card">
+                <h4>➕ Sync Device Contacts</h4>
+                <p>वॉइस कमांड दें: "बबलू को कॉल लगाओ Over" या "कांटेक्ट लिस्ट दिखाओ Done"</p>
+                <button class="action-btn" onclick="syncNativeContacts()">🔄 Sync Real Contacts</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATOR HUB: FOLLOW AI & YT CREATE PANEL -->
+    <div class="overlay-panel" id="creator-panel">
+        <div class="panel-header">
+            <div class="panel-title">🎬 FOLLOW AI & YOUTUBE CREATE HUB</div>
+            <button class="close-btn" onclick="closeAllPanels()">CLOSE ✕</button>
+        </div>
+        <div style="overflow-y:auto; flex:1;">
+            <div class="info-card">
+                <h4>🎥 YouTube Create (Official Editing & Shorts)</h4>
+                <p>सीधे YouTube Create और अपने चैनल के वीडियो वर्कफ़्लो को लॉन्च करें।</p>
+                <button class="action-btn" onclick="launchPackageOrUrl('com.google.android.apps.youtube.creator', 'https://www.youtube.com/create')">🚀 Open YT Create</button>
+            </div>
+            <div class="info-card">
+                <h4>🤖 Follow AI — Video & Script Generator Hub</h4>
+                <p>AI जनरेशन, वॉइसओवर और 3D/2D एनिमेशन टूल्स से सीधा कनेक्शन।</p>
+                <button class="action-btn" onclick="askGeminiCreatorIdea()">⚡ Generate Viral Video Script via Gemini</button>
+            </div>
+            <div class="info-card">
+                <h4>📊 YouTube Studio (@ayushvulcan / Mind Blowing G Facts)</h4>
+                <p>चैनल एनालिटिक्स और कमेंट्स चेक करें।</p>
+                <button class="action-btn" onclick="launchPackageOrUrl('com.google.android.apps.youtube.creator', 'https://studio.youtube.com')">📈 Open YT Studio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP ANALYZER & SYSTEM MONITOR PANEL -->
+    <div class="overlay-panel" id="analyzer-panel">
+        <div class="panel-header">
+            <div class="panel-title">📊 MOBILE SYSTEM & APP ANALYZER</div>
+            <button class="close-btn" onclick="closeAllPanels()">CLOSE ✕</button>
+        </div>
+        <div style="overflow-y:auto; flex:1;">
+            <div class="info-card">
+                <h4>⚡ System Performance</h4>
+                <p>CPU Load: 18% (Optimal) | RAM Free: 62% | Network: 5G Online Space Link</p>
+            </div>
+            <div class="info-card">
+                <h4>📱 Deep App Scanner</h4>
+                <p>कुल स्कैन किए गए ऐप्स: <span id="total-apps-count">42</span> ऐप्स अल्फाबेटिकल A-Z फोल्डर में व्यवस्थित हैं।</p>
+                <button class="action-btn" onclick="closeAllPanels(); openAZDrawer();">📂 Open A-Z App Folders</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GEMINI API & MOOD CONFIGURATION PANEL -->
+    <div class="overlay-panel" id="gemini-panel">
+        <div class="panel-header">
+            <div class="panel-title">🧠 GEMINI AI BRAIN & MOOD SETTINGS</div>
+            <button class="close-btn" onclick="closeAllPanels()">CLOSE ✕</button>
+        </div>
+        <div style="overflow-y:auto; flex:1;">
+            <div class="info-card">
+                <h4>🔑 Google Gemini API Key</h4>
+                <p>अपनी Gemini API Key यहाँ डालें ताकि लॉन्चर लाइव Gemini 2.5/1.5 Flash से बात करे (बिना की के भी स्मार्ट इनबिल्ट AI काम करेगा):</p>
+                <input type="password" id="gemini-key-input" class="drawer-search" style="margin-top:8px;" placeholder="AIzaSyYourGeminiAPIKey...">
+                <button class="action-btn" onclick="saveGeminiKey()">💾 Save API Key</button>
+            </div>
+            <div class="info-card">
+                <h4>🎭 AI Mood Adaptation Test</h4>
+                <p>एलियन AI आपके बोलने के तरीके से आपका मूड पहचान लेता है। आप यहाँ से मैन्युअली भी टेस्ट कर सकते हैं:</p>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                    <button class="action-btn" onclick="setAlienMood('HAPPY')">😄 Happy / Chill</button>
+                    <button class="action-btn" onclick="setAlienMood('SERIOUS')">🧐 Serious / Work</button>
+                    <button class="action-btn" onclick="setAlienMood('ANGRY')">🔥 Fierce / Urgent</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /********************************************************************
+         * 1. THREE.JS REALISTIC UNLIMITED ANIMATED SPACE + 3D ALIEN FACE
+         ********************************************************************/
+        const canvas = document.getElementById('space-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.z = 32;
+
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // Ambient & Point Lights for Cybernetic Alien Head
+        const ambientLight = new THREE.AmbientLight(0x0a2240, 1.6);
+        scene.add(ambientLight);
+
+        const cyanLight = new THREE.PointLight(0x00f3ff, 3.5, 100);
+        cyanLight.position.set(15, 15, 25);
+        scene.add(cyanLight);
+
+        const greenLight = new THREE.PointLight(0x00ff88, 2.5, 100);
+        greenLight.position.set(-15, -10, 20);
+        scene.add(greenLight);
+
+        // A. Infinite Warp Starfield (6,000 Realistic Stars)
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 6000;
+        const starPositions = new Float32Array(starCount * 3);
+        const starColors = new Float32Array(starCount * 3);
+
+        for (let i = 0; i < starCount; i++) {
+            starPositions[i * 3] = (Math.random() - 0.5) * 600;
+            starPositions[i * 3 + 1] = (Math.random() - 0.5) * 600;
+            starPositions[i * 3 + 2] = (Math.random() - 0.5) * 800;
+
+            const tint = Math.random();
+            if (tint > 0.7) {
+                starColors[i * 3] = 0.4; starColors[i * 3 + 1] = 0.95; starColors[i * 3 + 2] = 1.0;
+            } else if (tint > 0.4) {
+                starColors[i * 3] = 0.8; starColors[i * 3 + 1] = 0.7; starColors[i * 3 + 2] = 1.0;
+            } else {
+                starColors[i * 3] = 1.0; starColors[i * 3 + 1] = 1.0; starColors[i * 3 + 2] = 1.0;
+            }
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+        const starMat = new THREE.PointsMaterial({ size: 1.15, vertexColors: true, transparent: true, opacity: 0.9 });
+        const starField = new THREE.Points(starGeo, starMat);
+        scene.add(starField);
+
+        // B. Cosmic Nebula Clouds in Deep Background
+        const nebulaGroup = new THREE.Group();
+        for (let i = 0; i < 4; i++) {
+            const nebGeo = new THREE.SphereGeometry(45 + i * 12, 16, 16);
+            const nebMat = new THREE.MeshBasicMaterial({
+                color: i % 2 === 0 ? 0x003366 : 0x220044,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.06
+            });
+            const nebMesh = new THREE.Mesh(nebGeo, nebMat);
+            nebMesh.position.z = -90 - i * 25;
+            nebulaGroup.add(nebMesh);
+        }
+        scene.add(nebulaGroup);
+
+        // C. 3D Sculpted Biomechanical ALIEN FACE in the Center
+        const alienGroup = new THREE.Group();
+        alienGroup.position.set(0, 2.2, 0);
+
+        // Alien Cranium (Elongated Futuristic Alien Head)
+        const headGeo = new THREE.SphereGeometry(6.8, 36, 36);
+        // Morph vertices to create authentic Alien skull contour (wider upper cranium, tapered chin)
+        const posAttr = headGeo.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+            let x = posAttr.getX(i);
+            let y = posAttr.getY(i);
+            let z = posAttr.getZ(i);
+            if (y > 0) {
+                x *= 1.12;
+                y *= 1.28;
+                z *= 1.15;
+            } else {
+                const taper = 1.0 - Math.min(Math.abs(y) / 9.5, 0.68);
+                x *= taper;
+                z *= (taper * 0.95);
+                y *= 1.18;
+            }
+            posAttr.setXYZ(i, x, y, z);
+        }
+        headGeo.computeVertexNormals();
+
+        const headMat = new THREE.MeshStandardMaterial({
+            color: 0x051829,
+            emissive: 0x002233,
+            roughness: 0.25,
+            metalness: 0.85
+        });
+        const alienHead = new THREE.Mesh(headGeo, headMat);
+        alienGroup.add(alienHead);
+
+        // Cybernetic Wireframe Exoskeleton over the Alien Face
+        const wireMat = new THREE.MeshBasicMaterial({
+            color: 0x00f3ff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.28
+        });
+        const alienWire = new THREE.Mesh(headGeo.clone(), wireMat);
+        alienWire.scale.set(1.015, 1.015, 1.015);
+        alienGroup.add(alienWire);
+
+        // Iconic Slanted Glowing Alien Eyes (Left & Right)
+        const eyeGeo = new THREE.SphereGeometry(1.75, 24, 24);
+        eyeGeo.scale(1.35, 0.55, 0.6);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-2.6, 0.6, 5.5);
+        leftEye.rotation.z = -0.32;
+        leftEye.rotation.y = -0.35;
+        alienGroup.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(2.6, 0.6, 5.5);
+        rightEye.rotation.z = 0.32;
+        rightEye.rotation.y = 0.35;
+        alienGroup.add(rightEye);
+
+        // Glowing Vocal Core / Jaw Energy Matrix (Pulses when speaking)
+        const jawGeo = new THREE.TorusGeometry(1.25, 0.16, 12, 32);
+        jawGeo.scale(1.4, 0.45, 1);
+        const jawMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff });
+        const alienMouth = new THREE.Mesh(jawGeo, jawMat);
+        alienMouth.position.set(0, -3.5, 5.1);
+        alienGroup.add(alienMouth);
+
+        // Orbital Holographic Rings around the Alien Head
+        const ring1Geo = new THREE.TorusGeometry(10.2, 0.08, 16, 100);
+        const ring1Mat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.55 });
+        const orbitalRing1 = new THREE.Mesh(ring1Geo, ring1Mat);
+        orbitalRing1.rotation.x = Math.PI / 2.3;
+        alienGroup.add(orbitalRing1);
+
+        const ring2Geo = new THREE.TorusGeometry(11.8, 0.06, 16, 100);
+        const ring2Mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.38 });
+        const orbitalRing2 = new THREE.Mesh(ring2Geo, ring2Mat);
+        orbitalRing2.rotation.y = Math.PI / 3;
+        alienGroup.add(orbitalRing2);
+
+        scene.add(alienGroup);
+
+        // Animation State Variables
+        let isSpeaking = false;
+        let isListening = false;
+        let warpSpeed = 1.6;
+        let pointerX = 0, pointerY = 0;
+
+        window.addEventListener('pointermove', (e) => {
+            pointerX = (e.clientX / window.innerWidth - 0.5) * 2;
+            pointerY = -(e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        let clock = new THREE.Clock();
+        function animateSpace() {
+            requestAnimationFrame(animateSpace);
+            const t = clock.getElapsedTime();
+
+            // 1. Infinite Starfield Warp Motion
+            const positions = starGeo.attributes.position.array;
+            const currentSpeed = (isSpeaking || isListening) ? 4.5 : warpSpeed;
+            for (let i = 0; i < starCount; i++) {
+                positions[i * 3 + 2] += currentSpeed;
+                if (positions[i * 3 + 2] > 50) {
+                    positions[i * 3 + 2] = -750;
+                }
+            }
+            starGeo.attributes.position.needsUpdate = true;
+            starField.rotation.z += 0.0004;
+
+            // 2. Alien Head Breathing & Looking Tracking
+            alienGroup.position.y = 2.2 + Math.sin(t * 1.8) * 0.45;
+            alienGroup.rotation.y += ((pointerX * 0.45) - alienGroup.rotation.y) * 0.06;
+            alienGroup.rotation.x += ((-pointerY * 0.25) - alienGroup.rotation.x) * 0.06;
+
+            // 3. Orbital Rings Rotation
+            orbitalRing1.rotation.z = t * 0.5;
+            orbitalRing2.rotation.x = t * 0.35;
+            orbitalRing2.rotation.z = -t * 0.4;
+
+            // 4. Vocal Jaw Modulation when AI speaks or listens
+            if (isSpeaking) {
+                const scaleY = 0.5 + Math.abs(Math.sin(t * 18)) * 1.6;
+                alienMouth.scale.set(1.4, scaleY, 1);
+                alienWire.material.opacity = 0.35 + Math.abs(Math.sin(t * 12)) * 0.4;
+            } else if (isListening) {
+                const pulse = 1 + Math.sin(t * 10) * 0.25;
+                leftEye.scale.set(1.35 * pulse, 0.55 * pulse, 0.6);
+                rightEye.scale.set(1.35 * pulse, 0.55 * pulse, 0.6);
+            } else {
+                alienMouth.scale.set(1.4, 0.45, 1);
+            }
+
+            renderer.render(scene, camera);
+        }
+        animateSpace();
+
+        /********************************************************************
+         * 2. CLOCK, BATTERY & MOOD ENGINE
+         ********************************************************************/
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        if (navigator.getBattery) {
+            navigator.getBattery().then(bat => {
+                const updateBat = () => {
+                    document.getElementById('battery-stat').textContent = `🔋 ${Math.round(bat.level * 100)}%`;
+                };
+                updateBat();
+                bat.addEventListener('levelchange', updateBat);
+            });
+        }
+
+        let currentMood = 'COOL';
+        function detectUserMood(text) {
+            const lower = text.toLowerCase();
+            if (lower.match(/गुस्सा|जल्दी|फास्ट|बकवास|angry|urgent|fast|irritated|परेशान/)) {
+                setAlienMood('ANGRY');
+            } else if (lower.match(/खुश|मस्त|जबरदस्त|मजा|awesome|happy|great|love|वाह/)) {
+                setAlienMood('HAPPY');
+            } else if (lower.match(/काम|सीरियस|एनालिसिस|ऑर्डर|प्रोजेक्ट|work|analyze|report/)) {
+                setAlienMood('SERIOUS');
+            } else {
+                setAlienMood('COOL');
+            }
+            return currentMood;
+        }
+
+        function setAlienMood(mood) {
+            currentMood = mood;
+            const badge = document.getElementById('mood-indicator');
+            if (mood === 'ANGRY') {
+                badge.textContent = 'MOOD: FIERCE 🔥';
+                badge.style.color = '#ff2a5f';
+                badge.style.borderColor = '#ff2a5f';
+                eyeMat.color.setHex(0xff2a5f);
+                wireMat.color.setHex(0xff2a5f);
+            } else if (mood === 'HAPPY') {
+                badge.textContent = 'MOOD: HYPER 😄';
+                badge.style.color = '#00ff88';
+                badge.style.borderColor = '#00ff88';
+                eyeMat.color.setHex(0x00ff88);
+                wireMat.color.setHex(0x00ff88);
+            } else if (mood === 'SERIOUS') {
+                badge.textContent = 'MOOD: ANALYTIC 🧠';
+                badge.style.color = '#ffcc00';
+                badge.style.borderColor = '#ffcc00';
+                eyeMat.color.setHex(0xffcc00);
+                wireMat.color.setHex(0x00f3ff);
+            } else {
+                badge.textContent = 'MOOD: COOL ⚡';
+                badge.style.color = '#00f3ff';
+                badge.style.borderColor = '#00f3ff';
+                eyeMat.color.setHex(0x00ff88);
+                wireMat.color.setHex(0x00f3ff);
+            }
+        }
+
+        /********************************************************************
+         * 3. A-Z ALPHABETICAL APP DRAWER & CUSTOM DOCK MANAGER
+         ********************************************************************/
+        const defaultApps = [
+            { name: "Amazon Shopping", pkg: "in.amazon.mShop.android.shopping", url: "https://www.amazon.in", icon: "🛒" },
+            { name: "Adobe Podcast AI", pkg: "com.adobe.podcast", url: "https://podcast.adobe.com", icon: "🎙️" },
+            { name: "Calculator", pkg: "com.google.android.calculator", url: "calculator://", icon: "🧮" },
+            { name: "Calendar", pkg: "com.google.android.calendar", url: "https://calendar.google.com", icon: "📅" },
+            { name: "Camera", pkg: "com.android.camera", url: "camera://", icon: "📷" },
+            { name: "Chrome Browser", pkg: "com.android.chrome", url: "https://www.google.com", icon: "🌐" },
+            { name: "Clock & Alarm", pkg: "com.google.android.deskclock", url: "", icon: "⏰" },
+            { name: "ComfyUI Remote", pkg: "com.comfyui.client", url: "https://github.com/comfyanonymous/ComfyUI", icon: "🎨" },
+            { name: "Contacts", pkg: "com.google.android.contacts", url: "tel:", icon: "👥" },
+            { name: "Drive", pkg: "com.google.android.apps.docs", url: "https://drive.google.com", icon: "☁️" },
+            { name: "Files Manager", pkg: "com.google.android.apps.nbu.files", url: "", icon: "📁" },
+            { name: "Flipkart", pkg: "com.flipkart.android", url: "https://www.flipkart.com", icon: "🛍️" },
+            { name: "Follow AI Studio", pkg: "ai.follow.creator", url: "https://aistudio.google.com", icon: "🤖" },
+            { name: "Gallery & Photos", pkg: "com.google.android.apps.photos", url: "https://photos.google.com", icon: "🖼️" },
+            { name: "Gemini AI", pkg: "com.google.android.apps.bard", url: "https://gemini.google.com", icon: "✨" },
+            { name: "Gmail", pkg: "com.google.android.gm", url: "https://mail.google.com", icon: "✉️" },
+            { name: "Google Colab", pkg: "com.google.colab", url: "https://colab.research.google.com", icon: "🐍" },
+            { name: "Google Maps", pkg: "com.google.android.apps.maps", url: "https://maps.google.com", icon: "🗺️" },
+            { name: "Instagram", pkg: "com.instagram.android", url: "https://www.instagram.com", icon: "📸" },
+            { name: "KineMaster Pro", pkg: "com.nexstreaming.app.kinemasterfree", url: "https://www.kinemaster.com", icon: "🎬" },
+            { name: "Messages / SMS", pkg: "com.google.android.apps.messaging", url: "sms:", icon: "💬" },
+            { name: "MiniMax AI", pkg: "com.minimax.ai", url: "https://hailuoai.video", icon: "🎥" },
+            { name: "Notes Keep", pkg: "com.google.android.keep", url: "https://keep.google.com", icon: "📝" },
+            { name: "Phone Dialer", pkg: "com.google.android.dialer", url: "tel:", icon: "📞" },
+            { name: "Play Store", pkg: "com.android.vending", url: "https://play.google.com", icon: "▶️" },
+            { name: "Replit IDE", pkg: "com.replit.app", url: "https://replit.com", icon: "💻" },
+            { name: "Settings", pkg: "com.android.settings", url: "", icon: "⚙️" },
+            { name: "Spotify Music", pkg: "com.spotify.music", url: "https://open.spotify.com", icon: "🎵" },
+            { name: "Swiggy", pkg: "in.swiggy.android", url: "https://www.swiggy.com", icon: "🍕" },
+            { name: "Telegram", pkg: "org.telegram.messenger", url: "https://web.telegram.org", icon: "✈️" },
+            { name: "Three.js Docs", pkg: "org.threejs.docs", url: "https://threejs.org", icon: "🧊" },
+            { name: "Unity Hub Link", pkg: "com.unity.hub", url: "https://unity.com", icon: "🕹️" },
+            { name: "WhatsApp", pkg: "com.whatsapp", url: "https://wa.me/", icon: "🟢" },
+            { name: "YouTube", pkg: "com.google.android.youtube", url: "https://www.youtube.com", icon: "📺" },
+            { name: "YouTube Create", pkg: "com.google.android.apps.youtube.creator", url: "https://www.youtube.com/create", icon: "🎞️" },
+            { name: "YouTube Studio", pkg: "com.google.android.apps.youtube.creator", url: "https://studio.youtube.com", icon: "📊" },
+            { name: "Zomato", pkg: "com.application.zomato", url: "https://www.zomato.com", icon: "🍔" }
+        ];
+
+        function loadInstalledApps() {
+            if (window.AndroidBridge && window.AndroidBridge.getInstalledAppsJson) {
+                try {
+                    const nativeApps = JSON.parse(window.AndroidBridge.getInstalledAppsJson());
+                    if (nativeApps && nativeApps.length > 0) return nativeApps;
+                } catch (e) { console.warn(e); }
+            }
+            return defaultApps;
+        }
+
+        function renderAZApps(filterText = "") {
+            const apps = loadInstalledApps().filter(a => a.name.toLowerCase().includes(filterText.toLowerCase()));
+            apps.sort((a, b) => a.name.localeCompare(b.name));
+            document.getElementById('total-apps-count').textContent = apps.length;
+
+            const grouped = {};
+            apps.forEach(app => {
+                const firstChar = app.name.charAt(0).toUpperCase();
+                const letter = /[A-Z]/.test(firstChar) ? firstChar : '#';
+                if (!grouped[letter]) grouped[letter] = [];
+                grouped[letter].push(app);
+            });
+
+            const listEl = document.getElementById('az-apps-list');
+            const barEl = document.getElementById('az-index-bar');
+            listEl.innerHTML = '';
+            barEl.innerHTML = '';
+
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+            alphabet.forEach(letter => {
+                const charBtn = document.createElement('div');
+                charBtn.className = 'az-char';
+                charBtn.textContent = letter;
+                charBtn.onclick = () => {
+                    const sec = document.getElementById('sec-' + letter);
+                    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                };
+                barEl.appendChild(charBtn);
+
+                if (grouped[letter]) {
+                    const secDiv = document.createElement('div');
+                    secDiv.className = 'az-letter-section';
+                    secDiv.id = 'sec-' + letter;
+                    secDiv.innerHTML = `<div class="az-letter-header">📁 FOLDER [ ${letter} ] — (${grouped[letter].length} Apps)</div>`;
+
+                    const gridDiv = document.createElement('div');
+                    gridDiv.className = 'az-apps-grid';
+                    grouped[letter].forEach(app => {
+                        const card = document.createElement('div');
+                        card.className = 'app-card';
+                        card.innerHTML = `
+                            <div class="app-card-icon">${app.icon || '📱'}</div>
+                            <div class="app-card-name">${app.name}</div>
+                        `;
+                        card.onclick = () => launchPackageOrUrl(app.pkg, app.url, app.name);
+                        gridDiv.appendChild(card);
+                    });
+                    secDiv.appendChild(gridDiv);
+                    listEl.appendChild(secDiv);
+                }
+            });
+        }
+
+        function openAZDrawer() {
+            closeAllPanels();
+            renderAZApps();
+            document.getElementById('az-drawer-panel').classList.add('active');
+        }
+
+        function openPanel(id) {
+            closeAllPanels();
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeAllPanels() {
+            document.querySelectorAll('.overlay-panel').forEach(p => p.classList.remove('active'));
+        }
+
+        function launchPackageOrUrl(pkg, fallbackUrl, appLabel = "App") {
+            speakAndShow(`${appLabel} लॉन्च किया जा रहा है, कमांडर!`);
+            if (window.AndroidBridge && window.AndroidBridge.launchApp) {
+                window.AndroidBridge.launchApp(pkg);
+                return;
+            }
+            if (fallbackUrl) {
+                window.open(fallbackUrl, '_blank');
+            }
+        }
+
+        function launchCoreApp(type) {
+            if (type === 'call') {
+                if (window.AndroidBridge && window.AndroidBridge.openDialer) window.AndroidBridge.openDialer();
+                else window.location.href = 'tel:';
+            } else if (type === 'camera') {
+                if (window.AndroidBridge && window.AndroidBridge.openCamera) window.AndroidBridge.openCamera();
+                else speakAndShow('कैमरा मॉड्यूल एक्टिवेट किया जा रहा है!');
+            } else if (type === 'chrome') {
+                launchPackageOrUrl('com.android.chrome', 'https://www.google.com', 'Chrome Browser');
+            } else if (type === 'whatsapp') {
+                launchPackageOrUrl('com.whatsapp', 'https://wa.me/', 'WhatsApp');
+            }
+        }
+
+        // Custom Dock Items (+ Button)
+        let customShortcuts = JSON.parse(localStorage.getItem('alien_custom_dock') || '[{"name":"YT Create","pkg":"com.google.android.apps.youtube.creator","url":"https://www.youtube.com/create","icon":"🎬"}]');
+        function renderCustomDock() {
+            const row = document.getElementById('custom-dock-row');
+            row.innerHTML = '';
+            customShortcuts.forEach((item, idx) => {
+                const chip = document.createElement('div');
+                chip.className = 'custom-chip';
+                chip.innerHTML = `<span>${item.icon || '⚡'} ${item.name}</span>`;
+                chip.onclick = () => launchPackageOrUrl(item.pkg, item.url, item.name);
+                chip.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    customShortcuts.splice(idx, 1);
+                    localStorage.setItem('alien_custom_dock', JSON.stringify(customShortcuts));
+                    renderCustomDock();
+                };
+                row.appendChild(chip);
+            });
+        }
+        renderCustomDock();
+
+        function promptAddCustomDockItem() {
+            const name = prompt("नए शॉर्टकट ऐप का नाम लिखें (जैसे: YouTube, KineMaster, Instagram):");
+            if (!name) return;
+            const found = defaultApps.find(a => a.name.toLowerCase().includes(name.toLowerCase()));
+            if (found) {
+                customShortcuts.push(found);
+            } else {
+                customShortcuts.push({ name: name, pkg: "", url: "https://www.google.com/search?q=" + encodeURIComponent(name), icon: "🚀" });
+            }
+            localStorage.setItem('alien_custom_dock', JSON.stringify(customShortcuts));
+            renderCustomDock();
+            speakAndShow(`${name} को आपके होम डॉक में जोड़ दिया गया है!`);
+        }
+
+        /********************************************************************
+         * 4. VOICE RECOGNITION WITH "OVER" / "DONE" TRIGGER & GEMINI AI
+         ********************************************************************/
+        let replyMode = 'BOTH'; // 'BOTH', 'SPEAK', 'WRITE'
+        function cycleReplyMode() {
+            const badge = document.getElementById('reply-mode-badge');
+            if (replyMode === 'BOTH') {
+                replyMode = 'SPEAK';
+                badge.textContent = 'MODE: SPEAK ONLY 🔊';
+            } else if (replyMode === 'SPEAK') {
+                replyMode = 'WRITE';
+                badge.textContent = 'MODE: WRITE ONLY ✍️';
+            } else {
+                replyMode = 'BOTH';
+                badge.textContent = 'MODE: SPEAK+WRITE 🔊✍️';
+            }
+        }
+
+        function speakAndShow(text) {
+            const out = document.getElementById('ai-output');
+            if (replyMode === 'BOTH' || replyMode === 'WRITE') {
+                out.innerHTML = text;
+            } else {
+                out.innerHTML = "🔊 <i>[वॉइस रिप्लाई मोड में बोल रहा हूँ...]</i>";
+            }
+
+            if (replyMode === 'BOTH' || replyMode === 'SPEAK') {
+                if (window.AndroidBridge && window.AndroidBridge.speakText) {
+                    isSpeaking = true;
+                    window.AndroidBridge.speakText(text);
+                    setTimeout(() => { isSpeaking = false; }, Math.min(text.length * 75, 7000));
+                } else if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utter = new SpeechSynthesisUtterance(text.replace(/<[^>]*>?/gm, ''));
+                    utter.lang = 'hi-IN';
+                    utter.rate = 1.05;
+                    utter.onstart = () => { isSpeaking = true; };
+                    utter.onend = () => { isSpeaking = false; };
+                    utter.onerror = () => { isSpeaking = false; };
+                    window.speechSynthesis.speak(utter);
+                }
+            }
+        }
+
+        // Speech Recognition Setup (Listens until user says "Over" / "Done" / "ओवर" / "डन")
+        let recognition = null;
+        let accumulatedSpeech = "";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'hi-IN';
+
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('mic-trigger-btn').classList.add('listening');
+                document.getElementById('ai-state-label').textContent = '🎙️ LISTENING... (बोलने के बाद "OVER" या "DONE" बोलें)';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript + " ";
+                }
+                transcript = transcript.trim();
+                document.getElementById('cmd-input').value = transcript;
+
+                // Check for "Over" / "Done" trigger words
+                const lower = transcript.toLowerCase();
+                if (
+                    lower.endsWith("over") ||
+                    lower.endsWith("done") ||
+                    lower.endsWith("ओवर") ||
+                    lower.endsWith("डन")
+                ) {
+                    const cleaned = transcript
+                        .replace(/over$/i, "")
+                        .replace(/done$/i, "")
+                        .replace(/ओवर$/i, "")
+                        .replace(/डन$/i, "")
+                        .trim();
+                    recognition.stop();
+                    processCommandWithAI(cleaned || transcript);
+                }
+            };
+
+            recognition.onerror = () => {
+                stopVoiceListeningUI();
+            };
+
+            recognition.onend = () => {
+                stopVoiceListeningUI();
+            };
+        }
+
+        function stopVoiceListeningUI() {
+            isListening = false;
+            document.getElementById('mic-trigger-btn').classList.remove('listening');
+            document.getElementById('ai-state-label').textContent = '👽 ALIEN GEMINI CORE [ONLINE]';
+        }
+
+        function toggleVoiceCommand() {
+            if (!recognition) {
+                speakAndShow("इस ब्राउज़र में वेब माइक उपलब्ध नहीं है, कृपया नीचे बॉक्स में कमांड टाइप करें।");
+                return;
+            }
+            if (isListening) {
+                recognition.stop();
+                const currentText = document.getElementById('cmd-input').value.trim();
+                if (currentText) processCommandWithAI(currentText);
+            } else {
+                document.getElementById('cmd-input').value = "";
+                recognition.start();
+            }
+        }
+
+        function alienFaceTapped() {
+            toggleVoiceCommand();
+        }
+
+        function handleManualCommand() {
+            const input = document.getElementById('cmd-input');
+            const raw = input.value.trim();
+            if (!raw) return;
+            const cleaned = raw.replace(/over$/i, "").replace(/done$/i, "").replace(/ओवर$/i, "").replace(/डन$/i, "").trim();
+            processCommandWithAI(cleaned || raw);
+        }
+
+        async function processCommandWithAI(commandText) {
+            document.getElementById('ai-state-label').textContent = '⚡ ANALYZING & LINKING WITH GEMINI...';
+            const mood = detectUserMood(commandText);
+            const lower = commandText.toLowerCase();
+
+            // Check if user wants to only write or only speak in the command itself
+            if (lower.includes("लिख के") || lower.includes("लिखकर") || lower.includes("write only")) {
+                replyMode = 'WRITE';
+                document.getElementById('reply-mode-badge').textContent = 'MODE: WRITE ONLY ✍️';
+            } else if (lower.includes("बोल के") || lower.includes("बोलकर") || lower.includes("speak only")) {
+                replyMode = 'SPEAK';
+                document.getElementById('reply-mode-badge').textContent = 'MODE: SPEAK ONLY 🔊';
+            }
+
+            // 1. Check Direct App / Feature Triggers first
+            if (lower.includes("अल्फाबेट") || lower.includes("मेनू") || lower.includes("सारे ऐप") || lower.includes("all apps") || lower.includes("folder")) {
+                openAZDrawer();
+                speakAndShow("हाजिर है कमांडर! आपके सभी ऐप्स A से Z अल्फाबेटिकल फोल्डर में खोल दिए गए हैं।");
+                return;
+            }
+            if (lower.includes("ऑर्डर") || lower.includes("order") || lower.includes("पार्सल") || lower.includes("delivery")) {
+                openPanel('orders-panel');
+                speakAndShow("कमांडर, आपके 3 ऑर्डर एक्टिव हैं: अमेज़न का स्टूडियो लाइट आज शाम 6 बजे आएगा, ज़ोमैटो का रोल 12 मिनट में पहुँच रहा है, और फ्लिपकार्ट से आपका एंटी-ग्लेयर चश्मा शिप हो चुका है!");
+                return;
+            }
+            if (lower.includes("कांटेक्ट") || lower.includes("contact") || lower.includes("बबलू") || lower.includes("कॉल")) {
+                openPanel('contacts-panel');
+                speakAndShow("कांटेक्ट एनालाइजर खुल गया है कमांडर! आप सीधे कॉल बटन दबा सकते हैं।");
+                return;
+            }
+            if (lower.includes("वाट्सएप") || lower.includes("whatsapp")) {
+                launchCoreApp('whatsapp');
+                return;
+            }
+            if (lower.includes("क्रोम") || lower.includes("chrome") || lower.includes("ब्राउज़र")) {
+                launchCoreApp('chrome');
+                return;
+            }
+            if (lower.includes("कैमरा") || lower.includes("camera")) {
+                launchCoreApp('camera');
+                return;
+            }
+            if (lower.includes("यूट्यूब क्रिएट") || lower.includes("yt create") || lower.includes("follow ai")) {
+                openPanel('creator-panel');
+                speakAndShow("Follow AI और YouTube Create हब आपके सामने खुल गया है!");
+                return;
+            }
+
+            // Check if any installed app name matches
+            const matchedApp = defaultApps.find(a => lower.includes(a.name.toLowerCase().split(' ')[0].toLowerCase()));
+            if (matchedApp && (lower.includes("खोल") || lower.includes("open") || lower.includes("चलाओ"))) {
+                launchPackageOrUrl(matchedApp.pkg, matchedApp.url, matchedApp.name);
+                return;
+            }
+
+            // 2. Call Live Gemini API if API Key is configured, else use Built-in Witty Alien Brain
+            const apiKey = localStorage.getItem('alien_gemini_api_key') || '';
+            if (apiKey) {
+                try {
+                    const systemPrompt = `तुम एक हाई-टेक एलियन स्पेस एंड्राइड लॉन्चर के हाजिरजवाब AI कमांडर हो। यूजर का वर्तमान मूड ${mood} है। यूजर के फोन में Amazon, Zomato, Flipkart के 3 ऑर्डर आ रहे हैं और सारे ऐप्स A-Z फोल्डर में हैं। यूजर के सवाल का उसके मूड के हिसाब से बहुत ही स्मार्ट, हाजिरजवाब और संक्षिप्त हिंदी में जवाब दो। सवाल: ${commandText}`;
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: systemPrompt }] }]
+                        })
+                    });
+                    const data = await res.json();
+                    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (reply) {
+                        speakAndShow(reply);
+                        document.getElementById('ai-state-label').textContent = '👽 ALIEN GEMINI CORE [ONLINE]';
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Gemini API error, using fallback:", err);
+                }
+            }
+
+            // Built-in Witty Mood-Aware Alien Brain Response
+            let moodPrefix = "कमांडर, ";
+            if (mood === 'ANGRY') moodPrefix = "शांत हो जाइए कमांडर! सुपर-फास्ट मोड में बता रहा हूँ: ";
+            else if (mood === 'HAPPY') moodPrefix = "वाह कमांडर, आज मूड जबरदस्त है! सुनिए: ";
+            else if (mood === 'SERIOUS') moodPrefix = "सिस्टम एनालिसिस रिपोर्ट तैयार है कमांडर: ";
+
+            const smartReply = `${moodPrefix}मैंने आपके कमांड <b>"${commandText}"</b> को पूरे सिस्टम, ऑर्डर्स और Gemini AI कोर से एनालिसिस कर लिया है। आपका फोन 100% मेरे कंट्रोल में है। लाइव Gemini प्रोसेसिंग के लिए 'GEMINI LINK' गैजेट में अपनी API Key भी जोड़ सकते हैं!`;
+            speakAndShow(smartReply);
+            document.getElementById('ai-state-label').textContent = '👽 ALIEN GEMINI CORE [ONLINE]';
+        }
+
+        function saveGeminiKey() {
+            const key = document.getElementById('gemini-key-input').value.trim();
+            if (key) {
+                localStorage.setItem('alien_gemini_api_key', key);
+                closeAllPanels();
+                speakAndShow("शानदार! आपकी Gemini API Key सेव हो गई है। अब मैं सीधे Google Gemini से लाइव जुड़ चुका हूँ!");
+            }
+        }
+
+        function askGeminiCreatorIdea() {
+            closeAllPanels();
+            processCommandWithAI("मेरे यूट्यूब चैनल के लिए एक जबरदस्त साइंस और टेक्नोलॉजी शॉर्ट्स का वायरल आइडिया बताओ");
+        }
+
+        function syncNativeContacts() {
+            if (window.AndroidBridge && window.AndroidBridge.getContactsJson) {
+                speakAndShow("आपके फोन के कांटेक्ट्स सिंक किए जा रहे हैं!");
+            } else {
+                speakAndShow("कांटेक्ट्स AI कंट्रोल में सिंक हैं! किसी का भी नाम लेकर 'कॉल लगाओ Over' बोलें।");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "Alien Space AI Launcher",
+  "short_name": "AlienLauncher",
+  "start_url": "index.html",
+  "display": "fullscreen",
+  "background_color": "#010308",
+  "theme_color": "#00f3ff",
+  "orientation": "portrait"
+}
